@@ -2,7 +2,7 @@
 
 from controller import Robot
 import sys
-#sys.path.append('..')
+#sys.path.append('..').
 from utils.motion_library import MotionLibrary
 
 # Eve's locate_opponent() is implemented in this module:.
