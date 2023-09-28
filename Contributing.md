@@ -1,0 +1,1 @@
+Make the computer vision pipeline for the task and make sure you have completely updated the code, specifically the participant.py file. I will only accepet changes you introduce in the participant.py file.
