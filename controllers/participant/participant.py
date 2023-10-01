@@ -78,6 +78,50 @@ class Sultaan (Robot):
         """At the beginning of the match, the robot walks forwards to move away from the edges."""
         self.gait_manager.command_to_motors(heading_angle=0)
 
+     def on_ring(self):
+        image = self.camera2.get_image()
+        hsv_image = cv2.cvtColor(image,cv2.COLOR_BGR2HSV)
+        img1 = hsv_image.copy()
+        img2 = hsv_image.copy()
+        
+        colorr_low = np.array([193,62,35])
+        colorr_high = np.array([205,107,65])
+        colorf_low = np.array([83,62,42])
+        colorf_high = np.array([154,110,70])
+        mask1 = cv2.inRange(img1, colorr_low, colorr_high)
+        mask2 = cv2.inRange(img2, colorf_low, colorf_high)
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
+        mask1 = cv2.morphologyEx(mask1, cv2.MORPH_OPEN, kernel)
+        mask2 = cv2.morphologyEx(mask2, cv2.MORPH_OPEN, kernel)
+        res1 = cv2.bitwise_and(img1,img1,mask1)
+        res2 =  cv2.bitwise_and(img2,img2,mask2)
+        gray1 = cv2.cvtColor(res1, cv2.COLOR_BGR2GRAY)
+        gray2 = cv2.cvtColor(res2, cv2.COLOR_BGR2GRAY)
+        contours1, _ = cv2.findContours(gray1.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours2, _ = cv2.findContours(gray2.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours1 = sorted(contours1, key=cv2.contourArea, reverse=True)
+        contours2 = sorted(contours2, key=cv2.contourArea, reverse=True)
+        # Check if contours2 is non-zero before calculating its centroid
+        
+        cy1, cx1 = None, None
+        if len(contours1) > 0:
+            contours1 = sorted(contours1, key=cv2.contourArea, reverse=True)
+            cy1, cx1 = IP.get_contour_centroid(contours1[0])
+        # Check if contours2 is non-zero before calculating its centroid
+        cy2, cx2 = None, None
+        if len(contours2) > 0:
+            contours2 = sorted(contours2, key=cv2.contourArea, reverse=True)
+            cy2, cx2 = IP.get_contour_centroid(contours2[0])
+
+        print("cy1 = ", cy1, ", cy2 = ", cy2)
+        if len(contours1) > 0 and len(contours2) > 0:
+            if cy1 > cy2:
+                return False
+            else:
+                return True
+
+
+    
     def walk(self):
         normalized_x = self._get_normalized_opponent_x() 
         desired_radius = (self.SMALLEST_TURNING_RADIUS / normalized_x) if abs(normalized_x) > 1e-3 else None
