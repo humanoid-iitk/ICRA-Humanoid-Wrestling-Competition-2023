@@ -78,6 +78,33 @@ class Sultaan (Robot):
         """At the beginning of the match, the robot walks forwards to move away from the edges."""
         self.gait_manager.command_to_motors(heading_angle=0)
 
+    def near_edge(self):
+        image = self.camera2.get_image()
+        hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+        lower_red = (0, 50, 50)
+        upper_red = (10, 255, 255)
+        mask = cv2.inRange(hsv_image, lower_red, upper_red)
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5,5))
+        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        if (len(contours) > 0):
+            largest_contour = max(contours, key=cv2.contourArea)
+            rect = cv2.minAreaRect(largest_contour)
+            box = cv2.boxPoints(rect)
+            box = np.intp(box)
+
+            height, width    = image.shape[:2]
+            bottom_threshold = 0.92 * height
+
+            points_below_threshold = sum(point[1] >= bottom_threshold for point in box)
+            percentage_below_threshold = points_below_threshold / len(box)
+            if percentage_below_threshold >= 0.5 and cv2.contourArea(largest_contour) >= 180:
+                return True
+            
+        return False
+
+    
      def on_ring(self):
         image = self.camera2.get_image()
         hsv_image = cv2.cvtColor(image,cv2.COLOR_BGR2HSV)
